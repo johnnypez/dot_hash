@@ -9,14 +9,16 @@ module DotHash
 
     def method_missing(key, *args, &block)
       if has_key?(key)
-        execute(key, *args, &block)
+        get_value(key)
+      elsif hash.respond_to?(key)
+        hash.public_send(key, *args, &block)
       else
-        super(key, *args, &block)
+        super
       end
     end
 
     def respond_to?(key)
-      has_key?(key) or super(key)
+      has_key?(key) or hash.respond_to?(key) or super
     end
 
     def to_s
@@ -34,22 +36,21 @@ module DotHash
     private
 
     def has_key?(key)
-      hash.has_key?(key.to_sym) or
-        hash.has_key?(key.to_s) or
-        hash.respond_to?(key)
-    end
-
-    def execute(key, *args, &block)
-      value = get_value(key)
-      return value unless value.nil?
-      hash.public_send(key, *args, &block)
+      hash.has_key?(key.to_sym) or hash.has_key?(key.to_s) 
     end
 
     def get_value(key)
       key = hash.has_key?(key.to_s) ? key.to_s : key.to_sym
-      value = hash[key]
-      return value unless value.is_a?(Hash)
-      hash[key] = self.class.new value
+      cast_value(hash[key])
+    end
+
+    def cast_value(value)
+      case value
+      when Hash then self.class.new value
+      when Array then value.first.is_a?(Hash) ? value.map {|v| cast_value(v) }  : value
+      else
+        value
+      end
     end
   end
 end
