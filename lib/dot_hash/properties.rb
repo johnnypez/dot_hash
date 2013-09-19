@@ -17,8 +17,8 @@ module DotHash
       end
     end
 
-    def respond_to?(key)
-      has_key?(key) or hash.respond_to?(key) or super
+    def respond_to?(key, include_all = false)
+      has_key?(key) or hash.respond_to?(key, include_all) or super
     end
 
     def to_s
